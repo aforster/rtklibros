@@ -1,0 +1,22 @@
+<package format="2">
+  <name>rtklibros</name>
+  <version>0.0.0</version>
+  <description>ROS wrapper for RTKLib</description>
+  <maintainer email="an.forster@gmail.com">Andreas Forster</maintainer>
+  <author>Simon Lynen</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/rtklib</url>
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>roslib</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <export>
+      <cpp cflags="-I${prefix}/src -I${prefix}/srv_gen/cpp/include"/>
+  </export>
+</package>
+
+
