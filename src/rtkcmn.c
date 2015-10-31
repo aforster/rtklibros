@@ -3018,7 +3018,7 @@ extern void createdir(const char *path)
 #endif
 }
 /* replace string ------------------------------------------------------------*/
-static int repstr(char *str, const char *pat, const char *rep)
+/*slynen { static }*/ int repstr(char *str, const char *pat, const char *rep)
 {
     int len=strlen(pat);
     char buff[1024],*p,*q,*r;

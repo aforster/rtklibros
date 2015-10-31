@@ -238,8 +238,10 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     for (i=0;i<7;i++) {
         if (!*dir||!*ofile[i]) continue;
         if ((p=strrchr(ofile[i],FILEPATHSEP))) strcpy(work,p+1);
-        else strcpy(work,ofile[i]);
+/* slynen - decided that this is bullshit{        else strcpy(work,ofile[i]);
         sprintf(ofile[i],"%s%c%s",dir,FILEPATHSEP,work);
+
+ */
     }
     fprintf(stderr,"input file  : %s (%s)\n",ifile,formatstrs[format]);
     

@@ -1870,9 +1870,9 @@ bool restart_callback(rtklibros::SingleResponse::Request& request, rtklibros::Si
 *-----------------------------------------------------------------------------*/
 int main(int argc, char **argv)
 {
-	/*slynen{*/
-	ros::init(argc, argv, "rtklib");
-	/*}*/
+  /*slynen{*/
+  ros::init(argc, argv, "rtklib");
+  /*}*/
     
     vt_t vt={0};
     vt_ptr = &vt;

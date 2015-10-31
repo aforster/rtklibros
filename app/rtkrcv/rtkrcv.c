@@ -28,6 +28,11 @@
 #include "rtklib.h"
 #include "vt.h"
 
+/*slynen{*/
+#include <ros/ros.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+/*}*/
+
 static const char rcsid[]="$Id:$";
 
 #define PRGNAME     "rtkrcv"            /* program name */
@@ -50,6 +55,10 @@ static const char rcsid[]="$Id:$";
 #define SQRT(x)     ((x)<=0.0?0.0:sqrt(x))
 
 /* function prototypes -------------------------------------------------------*/
+/*slynen{*/
+extern int pthread_kill(pthread_t, int) throw ();
+/*extern int pthread_kill(pthread_t, int) ;*/
+/*}*/
 extern FILE *popen(const char *, const char *);
 extern int pclose(FILE *);
 
@@ -1365,6 +1374,10 @@ static void cmdshell(vt_t *vt)
 *-----------------------------------------------------------------------------*/
 int main(int argc, char **argv)
 {
+	/*slynen{*/
+	ros::init(argc, argv, "rtklib");
+	/*}*/
+
     vt_t vt={0};
     int i,start=0,port=0,outstat=0,trace=0;
     char *dev="",file[MAXSTR]="";

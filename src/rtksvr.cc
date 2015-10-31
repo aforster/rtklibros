@@ -28,6 +28,12 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
+/*slynen{*/
+#include <ros/ros.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <ros/package.h>
+/*}*/
+
 static const char rcsid[]="$Id:$";
 
 /* write solution header to output stream ------------------------------------*/
@@ -71,6 +77,49 @@ static void writesol(rtksvr_t *svr, int index)
         n=outsolexs(buff,&svr->rtk.sol,svr->rtk.ssat,svr->solopt+i);
         strwrite(svr->stream+i+3,buff,n);
         
+                /*slynen{*/
+        pse.header.stamp = ros::Time::now();
+        pse2.header.stamp = ros::Time::now();
+
+        double pos[6], rr[6], enu[6], P[36], Q[36];//pos and vel
+
+        outros(pos, rr, enu, P, Q, &svr->rtk.sol, svr->rtk.rb, svr->solopt+i);
+
+        pse.pose.pose.position.x = enu[0]; //X East
+        pse.pose.pose.position.y = enu[1]; //Y North
+        pse.pose.pose.position.z = enu[2]; //Z Up
+
+        pse.pose.covariance[0] = Q[0]; //var East
+        pse.pose.covariance[7] = Q[7]; //var North
+        pse.pose.covariance[14] = Q[14]; //var Up
+
+        pse.pose.covariance[1] = pse.pose.covariance[6] = Q[1]; //cov East/North
+        pse.pose.covariance[2] = pse.pose.covariance[12] = Q[8]; //cov North/Up
+        pse.pose.covariance[3] = pse.pose.covariance[13] = Q[2]; //cov East/Up
+
+
+        /*var quat to -1 == not applicable*/
+        pse.pose.covariance.elems[21] = pse.pose.covariance.elems[28] = pse.pose.covariance.elems[35] = -1;
+        /*}*/
+
+        /*gridanie{*/
+        // put the latitude and longitude into a second message
+        pse2.pose.pose.position.x = pos[0]*R2D; //latitude
+        pse2.pose.pose.position.y = pos[1]*R2D; //longitude
+        pse2.pose.pose.position.z = pos[2]; //height
+
+        pse2.pose.covariance[0] = Q[0]; //var East
+        pse2.pose.covariance[7] = Q[7]; //var North
+        pse2.pose.covariance[14] = Q[14]; //var Uup
+
+        pse2.pose.covariance[1] = pse.pose.covariance[6] = Q[1]; //cov East/North
+        pse2.pose.covariance[2] = pse.pose.covariance[12] = Q[8]; //cov North/Up
+        pse2.pose.covariance[3] = pse.pose.covariance[13] = Q[2]; //cov East/Up
+
+        /*var quat to -1 == not applicable*/
+        pse2.pose.covariance.elems[21] = pse.pose.covariance.elems[28] = pse.pose.covariance.elems[35] = -1;
+        /*}gridanie*/
+
         /* save output buffer */
         saveoutbuf(svr,buff,n,i);
     }
@@ -391,7 +440,15 @@ static void *rtksvrthread(void *arg)
     svr->state=1; obs.data=data;
     svr->tick=tickget();
     ticknmea=svr->tick-1000;
-    
+
+        /*slynen{*/
+    ros::NodeHandle ros_nh;
+    ros::Publisher pub_baseline = ros_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("baseline", 1000);
+    ros::Publisher pub_latlon = ros_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("latlon", 1000);
+    std::string frame_id;
+    ros_nh.getParam("frame_id", frame_id);
+    /*}*/
+
     for (cycle=0;svr->state;cycle++) {
         tick=tickget();
         
@@ -441,9 +498,17 @@ static void *rtksvrthread(void *arg)
                 /* adjust current time */
                 tt=(int)(tickget()-tick)/1000.0+DTTOL;
                 timeset(gpst2utc(timeadd(svr->rtk.sol.time,tt)));
-                
+
                 /* write solution */
-                writesol(svr,i);
+                /*slynen{*/
+                geometry_msgs::PoseWithCovarianceStamped pse;
+                pse.header.frame_id = frame_id;
+                geometry_msgs::PoseWithCovarianceStamped pse2;
+                pse.header.frame_id = frame_id;
+                writesol(svr,i,pse,pse2);
+                pub_baseline.publish(pse);
+                pub_latlon.publish(pse2);
+                /*writesol(svr,i);*/
             }
             /* if cpu overload, inclement obs outage counter and break */
             if ((int)(tickget()-tick)>=svr->cycle) {
@@ -455,7 +520,17 @@ static void *rtksvrthread(void *arg)
         }
         /* send null solution if no solution (1hz) */
         if (svr->rtk.sol.stat==SOLQ_NONE&&cycle%(1000/svr->cycle)==0) {
-            writesol(svr,0);
+            /*slynen{*/
+            geometry_msgs::PoseWithCovarianceStamped pse;
+            pse.header.frame_id = frame_id;
+            geometry_msgs::PoseWithCovarianceStamped pse2;
+            pse.header.frame_id = frame_id;
+            //ROS_WARN("No valid solution at the moment");
+            writesol(svr,0,pse,pse2);
+            pub_baseline.publish(pse);
+            pub_latlon.publish(pse2);
+            /*writesol(svr,0);*/
+            /*}*/
         }
         /* send nmea request to base/nrtk input stream */
         if (svr->nmeacycle>0&&(int)(tick-ticknmea)>=svr->nmeacycle) {
@@ -680,6 +755,12 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     /* set base station position */
     for (i=0;i<6;i++) {
         svr->rtk.rb[i]=i<3?prcopt->rb[i]:0.0;
+        /*slynen{*/
+        if(svr->rtk.rb[i]==0 && i<3){
+          fprintf(stderr,"[WARNING] BASE STATION POSITION %i IS NOT SET. CHANGE CONFIG FILE\n",i);
+          ROS_WARN("BASE STATION POSITION %i IS NOT SET. CHANGE CONFIG FILE\n",i);
+        }
+        /*}*/
     }
     /* update navigation data */
     for (i=0;i<MAXSAT *2;i++) svr->nav.eph [i].ttr=time0;
@@ -694,7 +775,13 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     for (i=0;i<8;i++) {
         rw=i<3?STR_MODE_R:STR_MODE_W;
         if (strs[i]!=STR_FILE) rw|=STR_MODE_W;
+        /*slynen{*/
+        repstr(paths[i],"$(find rtklib)",ros::package::getPath("rtklib").c_str()); /*TODO: could be done by extracting the package name*/
+        /*}*/
         if (!stropen(svr->stream+i,strs[i],rw,paths[i])) {
+            /*slynen{*/
+            fprintf(stderr, "RTK server failed opening stream %i: %s\n",i,paths[i]);
+            /*}*/
             for (i--;i>=0;i--) strclose(svr->stream+i);
             return 0;
         }
