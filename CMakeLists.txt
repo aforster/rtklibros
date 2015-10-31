@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rtklibros)
+project(rtklib)
 
 find_package(catkin_simple REQUIRED)
 
@@ -17,17 +17,6 @@ add_definitions("-Wall -ansi -pedantic -I$(SRC) -DTRACE -lpthread
  -DENAGLO -DENAQZS -DENAGAL -DNFREQ=3") 
 
 link_libraries(m)
-
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-#rosbuild_gensrv()
-
-#add dynamic reconfigure api
-#rosbuild_find_ros_package(dynamic_reconfigure)
-#include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-#gencfg()
-
 
 include_directories ("${PROJECT_SOURCE_DIR}/src")
 
@@ -48,8 +37,12 @@ cs_add_library(gw10 src/rcv/gw10.c)
 cs_add_library(javad src/rcv/javad.c)
 cs_add_library(stream src/stream.c)
 cs_add_library(sbas src/sbas.c)
+cs_add_library(nvs src/rcv/nvs.c)
+cs_add_library(rt17 src/rcv/rt17.c)
+cs_add_library(binex src/rcv/binex.c)
 cs_add_library(ublox src/rcv/ublox.c src/rcvraw.c)
-target_link_libraries(ublox ss2 crescent gw10 javad skytraq crescent sbas novatel rtkcmn rinex rtcm)
+target_link_libraries(ublox ss2 crescent gw10 javad skytraq crescent sbas novatel
+                      rtkcmn rinex rtcm nvs rt17 binex)
 cs_add_library(novatel src/rcv/novatel.c)
 cs_add_library(streamsvr src/streamsvr.c)
 
@@ -61,7 +54,8 @@ target_link_libraries(str2str stream rtkcmn solution geoid ublox skytraq streams
 cs_add_library(rinex  src/rinex.c)
 cs_add_library(rtkpos  src/rtkpos.c)
 cs_add_library(ephemeris  src/ephemeris.c)
-target_link_libraries(rtkpos lambda ppp pntpos ephemeris)
+cs_add_library(qzslex src/qzslex.c)
+target_link_libraries(rtkpos lambda ppp pntpos ephemeris qzslex)
 cs_add_library(postpos  src/postpos.c)
 target_link_libraries(postpos sbas rtkpos rtcm rinex)
 
@@ -69,11 +63,12 @@ cs_add_library(lambda  src/lambda.c)
 cs_add_library(preceph  src/preceph.c)
 cs_add_library(ionex src/ionex.c)
 cs_add_library(pntpos  src/pntpos.c)
-target_link_libraries(pntpos ionex)
+target_link_libraries(pntpos ionex ephemeris preceph)
 cs_add_library(options src/options.c)
-cs_add_library(ppp  src/ppp.c)
+cs_add_library(ppp  src/ppp.c src/ppp_ar.c)
 target_link_libraries(ppp pntpos)
-cs_add_library(rtcm  src/rtcm.c)
+
+cs_add_library(rtcm  src/rtcm.c src/rtcm2.c src/rtcm3.c src/rtcm3e.c)
 
 cs_add_executable(rnx2rtkp app/rnx2rtkp/rnx2rtkp.c)
 target_link_libraries(rnx2rtkp rtkcmn postpos solution ionex
@@ -84,9 +79,9 @@ cs_add_library(convrnx src/convrnx.c)
 target_link_libraries(convrnx rtkcmn sbas rtkpos rtcm rinex)
 
 cs_add_executable(convbin app/convbin/convbin.c src/rcvraw.c)
-target_link_libraries(convbin ublox rtkcmn rinex sbas convrnx rtcm skytraq 
+target_link_libraries(convbin ublox rtkcmn rinex sbas convrnx rtcm skytraq
 rtkcmn rtksvr rtkpos geoid solution lambda
-sbas stream rtcm preceph options pntpos ppp ublox 
+sbas stream rtcm preceph options pntpos ppp ublox
  ephemeris rinex ionex)
 
 #rtkrcv
@@ -94,6 +89,6 @@ cs_add_library(rtksvr src/rtksvr.cc)
 cs_add_executable(rtkrcv app/rtkrcv/rtkrcvros.cc)
 add_dependencies(rtkrcv rtklibros_generate_messages_cpp)
 target_link_libraries(rtkrcv rtkcmn rtksvr rtkpos geoid solution lambda
-sbas stream rtcm preceph options pntpos ppp ublox 
+sbas stream rtcm preceph options pntpos ppp ublox
  ephemeris rinex ionex)
 

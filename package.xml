@@ -1,5 +1,5 @@
 <package format="2">
-  <name>rtklibros</name>
+  <name>rtklib</name>
   <version>0.0.0</version>
   <description>ROS wrapper for RTKLib</description>
   <maintainer email="an.forster@gmail.com">Andreas Forster</maintainer>

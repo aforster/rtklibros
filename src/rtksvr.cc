@@ -57,8 +57,7 @@ static void saveoutbuf(rtksvr_t *svr, unsigned char *buff, int n, int index)
     rtksvrunlock(svr);
 }
 /* write solution to output stream -------------------------------------------*/
-static void writesol(rtksvr_t *svr, int index)
-{
+static void writesol(rtksvr_t *svr, int index, geometry_msgs::PoseWithCovarianceStamped& pse, geometry_msgs::PoseWithCovarianceStamped& pse2) {
     solopt_t solopt=solopt_default;
     unsigned char buff[1024];
     int i,n;
