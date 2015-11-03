@@ -34,6 +34,10 @@
 #include <ros/package.h>
 /*}*/
 
+/*aforster{*/
+#include <rtklib/Observation.h>
+/*}*/
+
 static const char rcsid[]="$Id:$";
 
 /* write solution header to output stream ------------------------------------*/
@@ -177,11 +181,38 @@ static void updatesvr(rtksvr_t *svr, int ret, obs_t *obs, nav_t *nav, int sat,
     
     if (ret==1) { /* observation data */
         if (iobs<MAXOBSBUF) {
+            // for n satellites
             for (i=0;i<obs->n;i++) {
+                // ignore excluded satellites
+                // and check if satellite is part of system to be used
+                // see options pos1-exclsats and pos1-navsys
                 if (svr->rtk.opt.exsats[obs->data[i].sat-1]==1||
                     !(satsys(obs->data[i].sat,NULL)&svr->rtk.opt.navsys)) continue;
                 svr->obs[index][iobs].data[n]=obs->data[i];
                 svr->obs[index][iobs].data[n++].rcv=index+1;
+                /*aforster{*/
+                // just a proof of concept, not final implementation
+                rtklib::Observation observation;
+                observation.n = obs->n;
+                observation.data.resize(observation.n);
+
+                for (size_t i = 0; i < observation.n; ++i) {
+                    observation.data[i].sat = obs->data[i].sat;
+                    observation.data[i].rcv = obs->data[i].rcv;
+                    for (size_t index = 0; index < 3; ++index) {
+                        observation.data[i].SNR[index] = obs->data[i].SNR[index];
+                        observation.data[i].LLI[index] = obs->data[i].LLI[index];
+                        observation.data[i].code[index] = obs->data[i].code[index];
+                        observation.data[i].L[index] = obs->data[i].L[index];
+                        observation.data[i].P[index] = obs->data[i].P[index];
+                        observation.data[i].D[index] = obs->data[i].D[index];
+                    }
+                }
+                static ros::NodeHandle static_nh;
+                static ros::Publisher static_pub_observation =
+                    static_nh.advertise<rtklib::Observation>("GPS_Observations",1000);
+                static_pub_observation.publish(observation);
+                /*aforster}*/
             }
             svr->obs[index][iobs].n=n;
             sortobs(&svr->obs[index][iobs]);
@@ -440,7 +471,7 @@ static void *rtksvrthread(void *arg)
     svr->tick=tickget();
     ticknmea=svr->tick-1000;
 
-        /*slynen{*/
+    /*slynen{*/
     ros::NodeHandle ros_nh;
     ros::Publisher pub_baseline = ros_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("baseline", 1000);
     ros::Publisher pub_latlon = ros_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("latlon", 1000);

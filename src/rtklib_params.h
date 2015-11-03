@@ -15,7 +15,7 @@ class RtklibParams{
     
     RtklibParams()
     {
-        rtklib_string_params.push_back("pos1_posmode");  //kinematic  # (0:single,1:dgps,2:kinematic,3:static,4:movingbase,5:fixed,6:ppp_kine,7:ppp_static)
+        rtklib_string_params.push_back("pos1_posmode");  //kinematic  # (0:single,1:dgps,2:kinematic,3:static,4:movingbase,5:fixed,6:ppp-kine,7:ppp-static,8:ppp-fixed)
         rtklib_string_params.push_back("pos1_frequency");  //l1         # (1:l1,2:l1+l2,3:l1+l2+l5,4:l1+l2+l5+l6,5:l1+l2+l5+l6+l7)
         rtklib_string_params.push_back("pos1_soltype");  //forward    # (0:forward,1:backward,2:combined)
         rtklib_string_params.push_back("pos1_dynamics");  //off        # (0:off,1:on)
@@ -76,6 +76,7 @@ class RtklibParams{
         rtklib_string_params.push_back("logstr3_path");  //''
         rtklib_string_params.push_back("misc_navmsgsel");  //all        # (0:all,1:rover,2:base,3:corr)
         rtklib_string_params.push_back("misc_proxyaddr"); // ''
+        rtklib_string_params.push_back("file_cmdfile1");
 
 
         rtklib_int_params.push_back("pos1_navsys"); //5          # (1:gps+2:sbas+4:glo+8:gal+16:qzs+32:comp)

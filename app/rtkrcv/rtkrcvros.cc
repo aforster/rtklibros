@@ -55,6 +55,10 @@
 #include <sstream>
 /*} end-gridanie*/
 
+/*aforster{*/
+#include <ros/package.h>
+/*{*/
+
 static const char rcsid[]="$Id:$";
 
 #define PRGNAME     "rtkrcv"            /* program name */
@@ -745,6 +749,9 @@ static int startsvr(vt_t *vt)
     /* read start commads from command files */
     for (i=0;i<3;i++) {
         if (!*rcvcmds[i]) continue;
+        /*aforster{*/
+        repstr(rcvcmds[i],"$(find rtklib)",ros::package::getPath("rtklib").c_str()); /*TODO: could be done by extracting the package name*/
+        /*}*/
         if (!readcmd(rcvcmds[i],s[i],0)) {
             printvt(vt,"no command file: %s\n",rcvcmds[i]);
         }
@@ -818,6 +825,9 @@ static void stopsvr(vt_t *vt)
     /* read stop commads from command files */
     for (i=0;i<3;i++) {
         if (!*rcvcmds[i]) continue;
+        /*aforster{*/
+        repstr(rcvcmds[i],"$(find rtklib)",ros::package::getPath("rtklib").c_str()); /*TODO: could be done by extracting the package name*/
+        /*}*/
         if (!readcmd(rcvcmds[i],s[i],1)) {
             printvt(vt,"no command file: %s\n",rcvcmds[i]);
         }
@@ -1648,19 +1658,19 @@ bool fetch_params_from_server(void)
     for (int i=0; i<params.rtklib_string_params.size();i++) {
         param_fetch = params.rtklib_string_params.at(i);
         param_resp_str = "DEFAULT_STR";
-    	nh.getParam(param_fetch, param_resp_str);
-    	std::cout << "Just fetched the param " << param_fetch << " = " << param_resp_str << "." << std::endl;
-    	
-    	// for some reason, rosparam replaces "off" with a false boolean.  if this happens, handle it
-    	// actual solution is to put '!!str off' instead of 'off' in yaml file
-    	if (param_resp_str == "DEFAULT_STR") {
-    	    std::cout << "String not over written.  Assuming false boolean." << std::endl;
-    	    param_resp_str = "off";
-	    }
-	    param_resp = param_resp_str;
-    	
-    	// ROS getParam requires that parameter names do not have '-' in them.
-    	// Param names in RTKLIB use '-' instead of '_', so switch it out.
+        nh.getParam(param_fetch, param_resp_str);
+        std::cout << "Just fetched the param " << param_fetch << " = " << param_resp_str << "." << std::endl;
+
+        // for some reason, rosparam replaces "off" with a false boolean.  if this happens, handle it
+        // actual solution is to put '!!str off' instead of 'off' in yaml file
+        if (param_resp_str == "DEFAULT_STR") {
+            std::cout << "String not over written.  Assuming false boolean." << std::endl;
+            param_resp_str = "off";
+        }
+        param_resp = param_resp_str;
+
+        // ROS getParam requires that parameter names do not have '-' in them.
+        // Param names in RTKLIB use '-' instead of '_', so switch it out.
         param_fetch.replace(param_fetch.find("_"),1,"-");
 
         // get non-const char* from std::string
@@ -1674,8 +1684,8 @@ bool fetch_params_from_server(void)
         char* param_resp_char = &writable2[0];
 
         // feed new values into request in the form of command line arguments (to use existing code)
-	    char * argers[] = {"ros_input", param_fetch_char, param_resp_char};	
-	    int narger = 3;
+        char * argers[] = {"ros_input", param_fetch_char, param_resp_char};
+        int narger = 3;
         cmd_set(argers, narger, vt_ptr);
     }
     

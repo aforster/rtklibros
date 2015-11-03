@@ -6,12 +6,6 @@ find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
 include_directories(src ${catkin_INCLUDE_DIRS}) 
- 
-
-catkin_package(
-  INCLUDE_DIRS src
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp geometry_msgs roslib)
 
 add_definitions("-Wall -ansi -pedantic -I$(SRC) -DTRACE -lpthread
  -DENAGLO -DENAQZS -DENAGAL -DNFREQ=3") 
